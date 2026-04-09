@@ -1,0 +1,14 @@
+{
+  "name": "astro-favicons-cloudflare-smoke",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "devDependencies": {
+    "@astrojs/cloudflare": "13.1.8",
+    "astro": "6.1.4"
+  }
+}

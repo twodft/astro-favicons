@@ -22,6 +22,7 @@
   "scripts": {
     "fmt": "prettier --write .",
     "build": "unbuild",
+    "smoke:cloudflare": "node ./scripts/smoke-cloudflare.mjs",
     "prepublishOnly": "npm run build"
   },
   "repository": {
