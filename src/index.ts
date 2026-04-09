@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import type { FaviconOptions, Input } from "./types";
 import { defaults } from "./config/defaults";
 import { handleAssets } from "./plugin";
-import { name } from "./config/packge";
+import { integrationName, packageName } from "./config/packge";
 
 export interface Options extends FaviconOptions {
   /**
@@ -29,7 +29,7 @@ export default function createIntegration(options?: Options): AstroIntegration {
   const middlewareEntry = fileURLToPath(new URL("./middleware.mjs", import.meta.url));
 
   return {
-    name,
+    name: integrationName,
     hooks: {
       "astro:config:setup": async ({
         config,
@@ -51,17 +51,17 @@ export default function createIntegration(options?: Options): AstroIntegration {
                 // Cloudflare's workerd dev pipeline can prebundle bare package
                 // subpath imports before the virtual module is registered.
                 alias: {
-                  [`${name}/middleware`]: middlewareEntry,
+                  [`${packageName}/middleware`]: middlewareEntry,
                 },
               },
               ssr: {
-                noExternal: [name, `${name}/middleware`],
+                noExternal: [packageName, `${packageName}/middleware`],
               },
             },
           });
         }
         addMiddleware({
-          entrypoint: `${name}/middleware`,
+          entrypoint: `${packageName}/middleware`,
           order: "pre",
         });
       },

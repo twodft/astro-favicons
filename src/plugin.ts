@@ -1,7 +1,7 @@
 import type { AstroIntegrationLogger } from "astro";
 import type { Plugin, ResolvedConfig } from "vite";
 import type { Options } from ".";
-import { name } from "./config/packge";
+import { integrationName, virtualModuleId } from "./config/packge";
 import { fetch } from "./core";
 import { getInput, normalizePath, mime } from "./helpers";
 import { formatTime } from "./utils/timer";
@@ -16,7 +16,6 @@ export async function handleAssets(
   opts: Options,
   params: Params,
 ): Promise<Plugin> {
-  const virtualModuleId = `virtual:${name}`;
   const resolvedVirtualModuleId = "\0" + virtualModuleId;
 
   let sources = getInput(opts);
@@ -39,7 +38,7 @@ export async function handleAssets(
   // let config: ResolvedConfig;
 
   return {
-    name,
+    name: integrationName,
     enforce: "pre",
     resolveId(id) {
       if (id === virtualModuleId) {

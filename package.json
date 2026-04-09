@@ -1,8 +1,11 @@
 {
-  "name": "astro-favicons",
-  "version": "3.1.6",
+  "name": "@twodft/astro-favicons",
+  "version": "3.1.7",
   "description": "An all-in-one favicon and PWA assets generator for Astro projects. It automates the creation of favicons, manifest, and supports hot reloading for efficient development. Powered by `astro-capo`, it keeps your ﹤𝚑𝚎𝚊𝚍﹥ content well-organized and tidy.",
   "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
@@ -27,7 +30,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ACP-CODE/astro-favicons.git"
+    "url": "git+https://github.com/twodft/astro-favicons.git"
   },
   "keywords": [
     "astro",
@@ -50,9 +53,9 @@
   "author": "Junlin",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ACP-CODE/astro-favicons/issues"
+    "url": "https://github.com/twodft/astro-favicons/issues"
   },
-  "homepage": "https://github.com/ACP-CODE/astro-favicons#readme",
+  "homepage": "https://github.com/twodft/astro-favicons#readme",
   "dependencies": {
     "favilib": "^1.0.5",
     "ultrahtml": "^1.5.3"

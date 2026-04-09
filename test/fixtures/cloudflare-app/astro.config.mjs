@@ -1,6 +1,6 @@
 import { defineConfig } from "astro/config";
 import cloudflare from "@astrojs/cloudflare";
-import favicons from "astro-favicons";
+import favicons from "@twodft/astro-favicons";
 
 export default defineConfig({
   output: "server",

@@ -1,11 +1,11 @@
-[![Build Status](https://github.com/ACP-CODE/astro-favicons/actions/workflows/ci.yaml/badge.svg?style=flat-square)](https://github.com/ACP-CODE/astro-favicons/actions/workflows/ci.yaml)
-[![NPM Version](https://img.shields.io/npm/v/astro-favicons)](https://www.npmjs.com/package/astro-favicons)
+[![Build Status](https://github.com/twodft/astro-favicons/actions/workflows/ci.yaml/badge.svg?style=flat-square)](https://github.com/twodft/astro-favicons/actions/workflows/ci.yaml)
+[![NPM Version](https://img.shields.io/npm/v/%40twodft%2Fastro-favicons)](https://www.npmjs.com/package/@twodft/astro-favicons)
 
 [W3C]: https://www.w3.org/TR/appmanifest/#x_localized-members
 [JSDoc]: ./dist/index.d.ts
 [documentation]: ./dist/index.d.ts
-[Github]: https://github.com/withpwa/astro/issues
-[Releases]: https://github.com/ACP-CODE/astro-favicons/releases/
+[Github]: https://github.com/twodft/astro-favicons/issues
+[Releases]: https://github.com/twodft/astro-favicons/releases/
 
 <div align="center">
   
@@ -25,7 +25,7 @@ Supports localized app names, and integrates a dynamic [W3C] appmanifest, and su
 Quickly install with the `astro add` command: (>=4.0.0)
 
 ```shell
-npx astro add astro-favicons
+npx astro add @twodft/astro-favicons
 ```
 
 If you run into issues, try with [Manual Setup](#1-install-and-configure) guide.
@@ -39,7 +39,7 @@ If you run into issues, try with [Manual Setup](#1-install-and-configure) guide.
 - **Step 1**: To install manually, run:
 
   ```shell
-  npm install astro-favicons
+  npm install @twodft/astro-favicons
   ```
 
 - **Step 2**: Add the integration to your Astro config file (`astro.config.*`):
@@ -47,7 +47,7 @@ If you run into issues, try with [Manual Setup](#1-install-and-configure) guide.
 ```ts
 // @ts-check
 import { defineConfig } from "astro/config";
-import favicons from "astro-favicons";
+import favicons from "@twodft/astro-favicons";
 
 export default defineConfig({
   integrations: [favicons()],
@@ -124,7 +124,7 @@ e.g `~/components/Meta.astro`
 
 ```ts
 ---
-import { localizedHTML as favicons } from 'astro-favicons/middleware';
+import { localizedHTML as favicons } from '@twodft/astro-favicons/middleware';
 ---
 <meta charset="utf-8" />
 <Fragment set:html={favicons(Astro.currentLocale)} />
