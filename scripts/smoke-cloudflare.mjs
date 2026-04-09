@@ -73,7 +73,9 @@ function startServer(scriptName, port) {
   let exited = false;
 
   const append = (chunk) => {
-    logs += chunk.toString();
+    const text = chunk.toString();
+    logs += text;
+    process.stdout.write(prefixLines(text, `[${scriptName}] `) + "\n");
   };
 
   child.stdout.on("data", append);
@@ -126,7 +128,9 @@ async function waitForHttp(url, server, label) {
     }
 
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        signal: AbortSignal.timeout(5_000),
+      });
       if (response.ok) {
         return response;
       }
