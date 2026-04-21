@@ -109,6 +109,7 @@ By default, `astro-favicons` will insert 20 HTML tags into all pages, including 
 
 > - **`Localized`** (requires `name_localized` configuration).
 > - **`withCapo`** is defaults to `true` (based on `AstroConfig.compressHTML`). To prevent automatic reordering and tidying of ` <head>` tags, set the relevant option or `compressHTML` to `false`.
+> - **`disableMiddleware`** defaults to `false`. Set it to `true` if you want to disable automatic `<head>` injection entirely and manage tags manually with `localizedHTML()`.
 
 <details>
 <summary>
@@ -129,6 +130,8 @@ import { localizedHTML as favicons } from '@twodft/astro-favicons/middleware';
 <meta charset="utf-8" />
 <Fragment set:html={favicons(Astro.currentLocale)} />
 ```
+
+Manual injection includes an internal marker so the automatic middleware can skip duplicate work for that page.
 
 </details>
 

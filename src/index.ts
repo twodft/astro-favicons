@@ -22,6 +22,13 @@ export interface Options extends FaviconOptions {
    * @default config.compressHTML `true`
    */
   withCapo?: boolean;
+  /**
+   * Disable the automatic middleware that injects and reorders favicon tags.
+   * Use this together with manual `localizedHTML()` injection if you want full
+   * control over the rendered `<head>`.
+   * @default `false`
+   */
+  disableMiddleware?: boolean;
 }
 
 export default function createIntegration(options?: Options): AstroIntegration {
@@ -60,10 +67,12 @@ export default function createIntegration(options?: Options): AstroIntegration {
             },
           });
         }
-        addMiddleware({
-          entrypoint: `${packageName}/middleware`,
-          order: "pre",
-        });
+        if (!opts.disableMiddleware) {
+          addMiddleware({
+            entrypoint: `${packageName}/middleware`,
+            order: "pre",
+          });
+        }
       },
     },
   };

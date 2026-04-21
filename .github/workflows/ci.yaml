@@ -1,49 +1,30 @@
-name: CI
+name: Release
 
 on:
   push:
-    branches:
-      - main
     tags:
       - "v*.*.*"
-  pull_request:
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  smoke:
-    name: Cloudflare Smoke
+  publish:
+    name: Publish npm package
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
-          cache: npm
-          node-version: 22.14.0
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run smoke tests
-        run: npm run smoke:cloudflare
-
-  publish:
-    name: Publish
-    runs-on: ubuntu-latest
-    needs: smoke
-    if: startsWith(github.ref, 'refs/tags/v')
-    timeout-minutes: 10
     environment: npm
     permissions:
-      contents: write
+      contents: read
       id-token: write
     steps:
       - name: Checkout
@@ -51,20 +32,35 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          cache: npm
           node-version: 22.14.0
           registry-url: "https://registry.npmjs.org"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Publish
-        run: npm publish
+      - name: Upgrade npm for trusted publishing
+        run: |
+          npm install --global npm@^11.5.1
+          npm --version
 
-      - name: Generate changelog
-        uses: hideoo/changelogithub-action@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify tag matches package version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+
+          if [[ "$TAG_VERSION" != "$PACKAGE_VERSION" ]]; then
+            echo "Tag version ($TAG_VERSION) does not match package.json ($PACKAGE_VERSION)."
+            exit 1
+          fi
+
+      - name: Build package
+        run: npm run build
+
+      - name: Publish package
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: npm publish --access public

@@ -2,6 +2,10 @@ import { html, opts } from "virtual:astro-favicons";
 import { defineMiddleware, sequence } from "astro/middleware";
 import capo from "./capo";
 
+const injectionMarker = "<!-- astro-favicons -->";
+const headCloseTag = "</head>";
+const headScanLimit = 64 * 1024;
+
 const useLocaleName = (locale?: string) => {
   if (!locale) return opts.name;
 
@@ -12,6 +16,8 @@ const useLocaleName = (locale?: string) => {
 };
 
 export const localizedHTML = (locale?: string) => {
+  if (html.length === 0) return "";
+
   const namePattern =
     /(name="(application-name|apple-mobile-web-app-title)")\scontent="[^"]*"/;
 
@@ -21,26 +27,69 @@ export const localizedHTML = (locale?: string) => {
     )
     .join("\n");
 
-  return tags;
+  return `${injectionMarker}\n${tags}`;
 };
+
+const hasInjectedHTML = (head: string) =>
+  head.includes(injectionMarker) || html.some((line) => head.includes(line));
+
+async function readHeadSnippet(res: Response): Promise<string> {
+  if (!res.body) {
+    return "";
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let scanned = 0;
+  let snippet = "";
+
+  try {
+    while (scanned < headScanLimit) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!value) continue;
+
+      scanned += value.byteLength;
+      snippet += decoder.decode(value, { stream: true });
+
+      const headIndex = snippet.indexOf(headCloseTag);
+      if (headIndex !== -1) {
+        return snippet.slice(0, headIndex + headCloseTag.length);
+      }
+    }
+
+    snippet += decoder.decode();
+    const headIndex = snippet.indexOf(headCloseTag);
+    return headIndex === -1 ? snippet : snippet.slice(0, headIndex + headCloseTag.length);
+  } finally {
+    try {
+      await reader.cancel();
+    } catch {
+      // Ignore cancellation errors from the peek-only clone reader.
+    }
+  }
+}
 
 const withCapo = defineMiddleware(async (ctx, next) => {
   const res = await next();
   try {
-    if (html.length === 0) throw "done";
+    if (html.length === 0 || opts.disableMiddleware) throw "done";
 
-    if (res.headers.get('X-Astro-Route-Type') !== 'page') {
+    if (res.headers.get("X-Astro-Route-Type") !== "page") {
+      return res;
+    }
+
+    const head = await readHeadSnippet(res.clone());
+    if (hasInjectedHTML(head)) {
       return res;
     }
 
     const doc = await res.clone().text();
-    const headIndex = doc.indexOf("</head>");
+    const headIndex = doc.indexOf(headCloseTag);
 
-    const htmlSet = new Set(html);
-    const isInjected = [...htmlSet].some((line) => doc.includes(line));
-    if (headIndex === -1 || (!opts.withCapo && isInjected)) throw "done";
+    if (headIndex === -1) throw "done";
 
-    const document = `${doc.slice(0, headIndex)}\n${!isInjected ? localizedHTML(ctx.currentLocale) : ""}\n${doc.slice(headIndex)}`;
+    const document = `${doc.slice(0, headIndex)}\n${localizedHTML(ctx.currentLocale)}\n${doc.slice(headIndex)}`;
 
     return new Response(opts.withCapo ? capo(document) : document, {
       status: res.status,

@@ -21,6 +21,14 @@ function sleep(ms) {
   return new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
 }
 
+function timeoutAfter(ms, message) {
+  return new Promise((_, rejectPromise) => {
+    setTimeout(() => {
+      rejectPromise(new Error(message));
+    }, ms);
+  });
+}
+
 async function run(command, args, cwd) {
   const child = spawn(command, args, {
     cwd,
@@ -100,19 +108,19 @@ async function stopServer(server) {
     return;
   }
 
+  const onClose = new Promise((resolvePromise) => {
+    server.child.once("close", resolvePromise);
+  });
+
   server.child.kill("SIGTERM");
   const closed = await Promise.race([
-    new Promise((resolvePromise) => {
-      server.child.once("close", resolvePromise);
-    }),
+    onClose.then(() => true),
     sleep(5_000).then(() => false),
   ]);
 
   if (!closed && server.child.exitCode === null) {
     server.child.kill("SIGKILL");
-    await new Promise((resolvePromise) => {
-      server.child.once("close", resolvePromise);
-    });
+    await onClose;
   }
 }
 
@@ -147,9 +155,52 @@ async function waitForHttp(url, server, label) {
   );
 }
 
+async function readResponseSnippet(response, label, { limit = 128 * 1024, timeoutMs = 10_000 } = {}) {
+  if (!response.body) {
+    return await Promise.race([
+      response.text(),
+      timeoutAfter(timeoutMs, `Timed out reading ${label} response body after ${timeoutMs}ms.`),
+    ]);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let read = 0;
+  let text = "";
+
+  try {
+    while (read < limit) {
+      const chunk = await Promise.race([
+        reader.read(),
+        timeoutAfter(timeoutMs, `Timed out reading ${label} response body after ${timeoutMs}ms.`),
+      ]);
+
+      if (chunk.done) {
+        break;
+      }
+      if (!chunk.value) {
+        continue;
+      }
+
+      read += chunk.value.byteLength;
+      text += decoder.decode(chunk.value, { stream: true });
+    }
+
+    text += decoder.decode();
+    return text;
+  } finally {
+    try {
+      await reader.cancel();
+    } catch {
+      // Ignore cancellation errors from bounded response-body reads.
+    }
+  }
+}
+
 async function assertPage(baseUrl, server, label) {
   const response = await waitForHttp(baseUrl, server, label);
-  const html = await response.text();
+  console.log(`Checking ${label} HTML snippet...`);
+  const html = await readResponseSnippet(response, `${label} HTML`);
 
   if (!html.includes("cloudflare smoke")) {
     throw new Error(
@@ -160,6 +211,12 @@ async function assertPage(baseUrl, server, label) {
   if (!html.includes("manifest.webmanifest")) {
     throw new Error(
       `${label} HTML did not include favicon manifest tags.\n${prefixLines(server.logs, "log: ")}`,
+    );
+  }
+
+  if (!html.includes("<!-- astro-favicons -->")) {
+    throw new Error(
+      `${label} HTML did not include the astro-favicons manual injection marker.\n${prefixLines(server.logs, "log: ")}`,
     );
   }
 
@@ -176,7 +233,10 @@ async function assertManifest(baseUrl, server, label) {
     server,
     `${label} manifest`,
   );
-  const text = await response.text();
+  console.log(`Checking ${label} manifest snippet...`);
+  const text = await readResponseSnippet(response, `${label} manifest`, {
+    limit: 32 * 1024,
+  });
 
   if (!text.includes("Cloudflare Smoke")) {
     throw new Error(
